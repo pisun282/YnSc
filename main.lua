@@ -420,7 +420,7 @@ CheckBtn.MouseButton1Click:Connect(function()
     local enteredKey = TextBox.Text
     local isValid = false
     
-    if enteredKey == "VLAD_LOX" or enteredKey == "vlad_lox" then
+     if lDigest(enteredKey) == "564c41445f4c4f58" or lDigest(enteredKey) == "766c61645f6c6f78" then
         isValid = true
     else
             
