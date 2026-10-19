@@ -417,13 +417,12 @@ CopyBtn.MouseButton1Click:Connect(function()
 end)
 
 CheckBtn.MouseButton1Click:Connect(function()
-        local enteredKey = TextBox.Text
+    local enteredKey = TextBox.Text
     local isValid = false
     
     if enteredKey == string.char(86,76,65,68,95,76,79,88) or enteredKey == string.char(118,108,97,100,95,108,111,120) then
         isValid = true
     else
-            
         pcall(function()
             isValid = verifyKey(enteredKey)
         end)
@@ -432,10 +431,9 @@ CheckBtn.MouseButton1Click:Connect(function()
     if isValid then
         CheckBtn.Text = "ВЕРНО!"
         task.wait(0.5)
-        ScreenGui:Destroy() 
+        ScreenGui:Destroy()
         
-       
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/pisun282/cheat/refs/heads/main/main.lua"))()
+        loadstring(game:HttpGet("https://githubusercontent.com"))()
     else
         CheckBtn.Text = "INVALID KEY!"
         task.wait(1.5)
