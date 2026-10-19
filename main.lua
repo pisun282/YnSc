@@ -9,9 +9,9 @@ local lEncode, lDecode, lDigest = a3, aw, Z;
 --! platoboost library
 
 --! configuration
-local service = (21000 + 14265); 
-local secret = string.char(57,49,53,100,97,97,100,100,45,51,97,56,53,45,52,57,52,56,45,56,102,101,101,45,55,99,101,99,97,57,102,102,97,98,55,55);
-local useNonce = true;
+local service = (21000 + 14265);  -- your service id, this is used to identify your service.
+local secret = string.char(57,49,53,100,97,97,100,100,45,51,97,56,53,45,52,57,52,56,45,56,102,101,101,45,55,99,101,99,97,57,102,102,97,98,55,55);  -- make sure to obfuscate this if you want to ensure security.
+local useNonce = true;  -- use a nonce to prevent replay attacks and request tampering.
 
 --! callbacks
 local onMessage = function(message) end;
@@ -283,8 +283,10 @@ onMessage = function(message)
 end
 ]]--
 
---! Финал лоадера проекта YnSc
+-- NOTE: PLACE THIS ENTIRE SCRIPT AT THE TOP OF YOUR SCRIPT, ADD THE LOGIC, THEN OBFUSCATE YOUR SCRIPT.
 
+--! example usage
+--[[
 copyButton.MouseButton1Click:Connect(function()
     copyLink();
 end)
@@ -292,11 +294,19 @@ end)
 verifyButton.MouseButton1Click:Connect(function()
     local key = keyBox.Text;
     local success = verifyKey(key);
-    
+
     if success then
-        -- МОСТ ЗАКРЕПЛЕН: Теперь код активен, а Xeno мгновенно подгрузит чит!
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/pisun282/cheat/refs/heads/main/main.lua"))()
+        print("key is valid.");
     else
         print("key is invalid.");
     end
 end)
+
+local flag = getFlag("example_flag");
+if flag ~= nil then
+    print("flag value: " .. flag);
+else
+    print("failed to get flag.");
+end
+]]--
+-------------------------------------------------------------------------------
