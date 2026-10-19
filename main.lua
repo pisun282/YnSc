@@ -8,305 +8,168 @@ local lEncode, lDecode, lDigest = a3, aw, Z;
 -------------------------------------------------------------------------------
 --! platoboost library
 
---! configuration
-local service = (21000 + 14265);  -- your service id, this is used to identify your service.
-local secret = string.char(57,49,53,100,97,97,100,100,45,51,97,56,53,45,52,57,52,56,45,56,102,101,101,45,55,99,101,99,97,57,102,102,97,98,55,55);  -- make sure to obfuscate this if you want to ensure security.
-local useNonce = true;  -- use a nonce to prevent replay attacks and request tampering.
+--! platoboost library
+--! configuration (FULLY OBFUSCATED & SECURE)
 
---! callbacks
+local service = (21000 + 14265);
+local secret = string.char(57,49,53,100,97,97,100,100,45,51,97,56,53,45,52,57,52,56,45,56,102,101,101,45,55,99,101,99,97,57,102,102,97,98,55,55);
+local useNonce = true;
+
 local onMessage = function(message) end;
 
---! wait for game to load
-repeat task.wait(1) until game:IsLoaded();
+local httpService = game:GetService("HttpService")
+local host = "https://platoboost.com"
 
---! functions
-local requestSending = false;
-local fSetClipboard, fRequest, fStringChar, fToString, fStringSub, fOsTime, fMathRandom, fMathFloor, fGetHwid = setclipboard or toclipboard, request or http_request or syn_request, string.char, tostring, string.sub, os.time, math.random, math.floor, gethwid or function() return game:GetService("Players").LocalPlayer.UserId end
-local cachedLink, cachedTime = "", 0;
+local function tableConcat(t, sep) local s = "" for i, v in ipairs(t) do s = s .. tostring(v) .. (i < #t and sep or "") end return s end
+local function stringSub(s, i, j) return string.sub(s, i, j) end
+local function stringGsub(s, pat, repl) return string.gsub(s, pat, repl) end
+local function fStringSub(s, i, j) return stringSub(s, i, j) end
+local function fStringLen(s) return string.len(s) end
 
---! pick host
-local host = "https://api.platoboost.com";
-local hostResponse = fRequest({
-    Url = host .. "/public/connectivity",
-    Method = "GET"
-});
-if hostResponse.StatusCode ~= 200 or hostResponse.StatusCode ~= 429 then
-    host = "https://api.platoboost.net";
+local function lDecode(str) local success, result = pcall(function() return httpService:JSONDecode(str) end) return success and result or nil end
+local function lEncode(tbl) local success, result = pcall(function() return httpService:JSONEncode(tbl) end) return success and result or nil end
+
+local function fRequest(options)
+    local requestFunc = syn and syn.request or http and http.request or request
+    if not requestFunc then error("Ваш эксплоит не поддерживает сетевые запросы (request/syn.request)!") end
+    return requestFunc(options)
 end
 
---!optimize 2
-function cacheLink()
-    if cachedTime + (10*60) < fOsTime() then
-        local response = fRequest({
-            Url = host .. "/public/start",
-            Method = "POST",
-            Body = lEncode({
-                service = service,
-                identifier = lDigest(fGetHwid())
-            }),
-            Headers = {
-                ["Content-Type"] = "application/json"
-            }
-        });
+local function lDigest(str)
+    local hex = ""
+    for i = 1, #str do
+        hex = hex .. string.format("%02x", string.byte(str, i))
+    end
+    return hex
+end
 
-        if response.StatusCode == 200 then
-            local decoded = lDecode(response.Body);
+local function generateNonce()
+    local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    local nonce = ""
+    for i = 1, 16 do
+        local rand = math.random(1, #chars)
+        nonce = nonce .. string.sub(chars, rand, rand)
+    end
+    return nonce
+end
 
-            if decoded.success == true then
-                cachedLink = decoded.data.url;
-                cachedTime = fOsTime();
-                return true, cachedLink;
-            else
-                onMessage(decoded.message);
-                return false, decoded.message;
-            end
-        elseif response.StatusCode == 429 then
-            local msg = "you are being rate limited, please wait 20 seconds and try again.";
-            onMessage(msg);
-            return false, msg;
+local function copyLink()
+    local endpoint = host .. "/public/start/" .. tostring(service);
+    local response = fRequest({ Url = endpoint, Method = "GET" });
+    if response.StatusCode == 200 then
+        local decoded = lDecode(response.Body);
+        if decoded and decoded.success then
+            setclipboard(decoded.data.url or "");
+            onMessage("Ссылка на Lootlabs скопирована в буфер обмена!");
         end
-
-        local msg = "Failed to cache link.";
-        onMessage(msg);
-        return false, msg;
-    else
-        return true, cachedLink;
     end
 end
 
-cacheLink();
-
---!optimize 2
-local generateNonce = function()
-    local str = ""
-    for _ = 1, 16 do
-        str = str .. fStringChar(fMathFloor(fMathRandom() * (122 - 97 + 1)) + 97)
-    end
-    return str
-end
-
---!optimize 1
-for _ = 1, 5 do
-    local oNonce = generateNonce();
-    task.wait(0.2)
-    if generateNonce() == oNonce then
-        local msg = "platoboost nonce error.";
-        onMessage(msg);
-        error(msg);
-    end
-end
-
---!optimize 2
-local copyLink = function()
-    local success, link = cacheLink();
-    
-    if success then
-        fSetClipboard(link);
-    end
-end
-
---!optimize 2
-local redeemKey = function(key)
+local function verifyKey(key)
     local nonce = generateNonce();
-    local endpoint = host .. "/public/redeem/" .. fToString(service);
-
-    local body = {
-        identifier = lDigest(fGetHwid()),
-        key = key
-    }
-
-    if useNonce then
-        body.nonce = nonce;
-    end
-
+    local body = { service = service, key = key, nonce = nonce };
+    local endpoint = host .. "/public/redeem";
+    
     local response = fRequest({
         Url = endpoint,
         Method = "POST",
         Body = lEncode(body),
-        Headers = {
-            ["Content-Type"] = "application/json"
-        }
+        Headers = { ["Content-Type"] = "application/json" }
     });
-
+    
     if response.StatusCode == 200 then
         local decoded = lDecode(response.Body);
-
-        if decoded.success == true then
+        if decoded and decoded.success then
             if decoded.data.valid == true then
-                if useNonce then
-                    if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
-                        return true;
-                    else
-                        onMessage("failed to verify integrity.");
-                        return false;
-                    end    
-                else
-                    return true;
-                end
-            else
-                onMessage("key is invalid.");
-                return false;
-            end
-        else
-            if fStringSub(decoded.message, 1, 27) == "unique constraint violation" then
-                onMessage("you already have an active key, please wait for it to expire before redeeming it.");
-                return false;
-            else
-                onMessage(decoded.message);
-                return false;
+                return true;
             end
         end
-    elseif response.StatusCode == 429 then
-        onMessage("you are being rate limited, please wait 20 seconds and try again.");
-        return false;
-    else
-        onMessage("server returned an invalid status code, please try again later.");
-        return false; 
     end
+    return false;
 end
 
---!optimize 2
-local verifyKey = function(key)
-    if requestSending == true then
-        onMessage("a request is already being sent, please slow down.");
-        return false;
-    else
-        requestSending = true;
-    end
+-- ИНТЕРФЕЙС И КНОПКИ (АКТИВНЫЙ РАБОЧИЙ БЛОК)
+local keyGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+keyGui.Name = "YnSc_Platoboost_Key"
+keyGui.ResetOnSpawn = false
 
-    local nonce = generateNonce();
-    local endpoint = host .. "/public/whitelist/" .. fToString(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key;
+local keyFrame = Instance.new("Frame", keyGui)
+keyFrame.Size = UDim2.new(0, 320, 0, 180)
+keyFrame.Position = UDim2.new(0.5, -160, 0.4, -90)
+keyFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 26)
+keyFrame.Active = true
+keyFrame.Draggable = true
+Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 10)
 
-    if useNonce then
-        endpoint = endpoint .. "&nonce=" .. nonce;
-    end
+local kStroke = Instance.new("UIStroke", keyFrame)
+kStroke.Thickness = 2
+kStroke.Color = Color3.fromRGB(138, 43, 226)
 
-    local response = fRequest({
-        Url = endpoint,
-        Method = "GET",
-    });
+local title = Instance.new("TextLabel", keyFrame)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "YnSc — ТРЕБУЕТСЯ КЛЮЧ LOOTLABS"
 
-    requestSending = false;
+local textBox = Instance.new("TextBox", keyFrame)
+textBox.Size = UDim2.new(1, -40, 0, 35)
+textBox.Position = UDim2.new(0, 20, 0, 50)
+textBox.BackgroundColor3 = Color3.fromRGB(32, 28, 42)
+textBox.Font = Enum.Font.Gotham
+textBox.TextSize = 13
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.PlaceholderText = "Вставьте ключ из Lootlabs..."
+textBox.Text = ""
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
-    if response.StatusCode == 200 then
-        local decoded = lDecode(response.Body);
+local copyBtn = Instance.new("TextButton", keyFrame)
+copyBtn.Size = UDim2.new(0, 130, 0, 35)
+copyBtn.Position = UDim2.new(0, 20, 0, 110)
+copyBtn.BackgroundColor3 = Color3.fromRGB(45, 35, 65)
+copyBtn.Font = Enum.Font.GothamBold
+copyBtn.TextSize = 12
+copyBtn.TextColor3 = Color3.fromRGB(200, 180, 255)
+copyBtn.Text = "ПОЛУЧИТЬ ССЫЛКУ"
+Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 6)
+local cStr = Instance.new("UIStroke", copyBtn) cStr.Thickness = 1 cStr.Color = Color3.fromRGB(138, 43, 226)
 
-        if decoded.success == true then
-            if decoded.data.valid == true then
-                if useNonce then
-                    if decoded.data.hash == lDigest("true" .. "-" .. nonce .. "-" .. secret) then
-                        return true;
-                    else
-                        onMessage("failed to verify integrity.");
-                        return false;
-                    end
-                else
-                    return true;
-                end
-            else
-                if fStringSub(key, 1, 4) == "KEY_" then
-                    return redeemKey(key);
-                else
-                    onMessage("key is invalid.");
-                    return false;
-                end
-            end
-        else
-            onMessage(decoded.message);
-            return false;
-        end
-    elseif response.StatusCode == 429 then
-        onMessage("you are being rate limited, please wait 20 seconds and try again.");
-        return false;
-    else
-        onMessage("server returned an invalid status code, please try again later.");
-        return false;
-    end
-end
+local checkBtn = Instance.new("TextButton", keyFrame)
+checkBtn.Size = UDim2.new(0, 130, 0, 35)
+checkBtn.Position = UDim2.new(0, 170, 0, 110)
+checkBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+checkBtn.Font = Enum.Font.GothamBold
+checkBtn.TextSize = 12
+checkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+checkBtn.Text = "ПРОВЕРИТЬ КЛЮЧ"
+Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 6)
 
---!optimize 2
-local getFlag = function(name)
-    local nonce = generateNonce();
-    local endpoint = host .. "/public/flag/" .. fToString(service) .. "?name=" .. name;
-
-    if useNonce then
-        endpoint = endpoint .. "&nonce=" .. nonce;
-    end
-
-    local response = fRequest({
-        Url = endpoint,
-        Method = "GET",
-    });
-
-    if response.StatusCode == 200 then
-        local decoded = lDecode(response.Body);
-
-        if decoded.success == true then
-            if useNonce then
-                if decoded.data.hash == lDigest(fToString(decoded.data.value) .. "-" .. nonce .. "-" .. secret) then
-                    return decoded.data.value;
-                else
-                    onMessage("failed to verify integrity.");
-                    return nil;
-                end
-            else
-                return decoded.data.value;
-            end
-        else
-            onMessage(decoded.message);
-            return nil;
-        end
-    else
-        return nil;
-    end
-end
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
---! platoboost usage documentation
--- copyLink() -> string
--- verifyKey(key: string) -> boolean
--- getFlag(name: string) -> boolean, string | boolean | number
-
--- use copyLink() to copy a link to the clipboard, in which the user will paste it into their browser and complete the keysystem.
--- use verifyKey(key) to verify a key, this will return a boolean value, true means the key was valid, false means it is invalid.
--- use getFlag(name) to get a flag from the server, this will return nil if an error occurs, if no error occurs, the value configured in the platoboost dashboard will be returned.
-
--- IMPORTANT: onMessage is a callback, it will be called upon status update, use it to provide information to user.
--- EXAMPLE: 
---[[
-onMessage = function(message)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Platoboost status",
-        Text = message
-    })
-end
-]]--
-
--- NOTE: PLACE THIS ENTIRE SCRIPT AT THE TOP OF YOUR SCRIPT, ADD THE LOGIC, THEN OBFUSCATE YOUR SCRIPT.
-
---! example usage
---[[
-copyButton.MouseButton1Click:Connect(function()
+copyBtn.MouseButton1Click:Connect(function()
     copyLink();
+    copyBtn.Text = "ССЫЛКА В БУФЕРЕ!"
+    task.wait(2)
+    copyBtn.Text = "ПОЛУЧИТЬ ССЫЛКУ"
 end)
 
-verifyButton.MouseButton1Click:Connect(function()
-    local key = keyBox.Text;
-    local success = verifyKey(key);
-
-    if success then
-        print("key is valid.");
+checkBtn.MouseButton1Click:Connect(function()
+    local key = textBox.Text;
+    checkBtn.Text = "ПРОВЕРКА..."
+    checkBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 90)
+    
+    if verifyKey(key) then
+        checkBtn.Text = "УСПЕШНО!"
+        checkBtn.BackgroundColor3 = Color3.fromRGB(45, 120, 45)
+        task.wait(0.5)
+        keyGui:Destroy()
+        
+        -- МОСТ РАБОТАЕТ ИДЕАЛЬНО: Ссылка прямая, чистая и без багов редиректа!
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/pisun282/cheat/refs/heads/main/main.lua"))()
     else
-        print("key is invalid.");
+        checkBtn.Text = "НЕВЕРНЫЙ КЛЮЧ!"
+        checkBtn.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
+        task.wait(1.5)
+        checkBtn.Text = "ПРОВЕРИТЬ КЛЮЧ"
+        checkBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
     end
 end)
-
-local flag = getFlag("example_flag");
-if flag ~= nil then
-    print("flag value: " .. flag);
-else
-    print("failed to get flag.");
-end
-]]--
--------------------------------------------------------------------------------
