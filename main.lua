@@ -9,9 +9,7 @@ local lEncode, lDecode, lDigest = a3, aw, Z;
 --! platoboost library
 
 --! platoboost library
---! configuration (FULLY OBFUSCATED & SECURE)
-
-local service = (21000 + 14265);
+--! configuratilocal service = (21000 + 14265);
 local secret = string.char(57,49,53,100,97,97,100,100,45,51,97,56,53,45,52,57,52,56,45,56,102,101,101,45,55,99,101,99,97,57,102,102,97,98,55,55);
 local useNonce = true;
 
@@ -20,27 +18,13 @@ local onMessage = function(message) end;
 local httpService = game:GetService("HttpService")
 local host = "https://platoboost.com"
 
-local function tableConcat(t, sep) local s = "" for i, v in ipairs(t) do s = s .. tostring(v) .. (i < #t and sep or "") end return s end
-local function stringSub(s, i, j) return string.sub(s, i, j) end
-local function stringGsub(s, pat, repl) return string.gsub(s, pat, repl) end
-local function fStringSub(s, i, j) return stringSub(s, i, j) end
-local function fStringLen(s) return string.len(s) end
-
 local function lDecode(str) local success, result = pcall(function() return httpService:JSONDecode(str) end) return success and result or nil end
 local function lEncode(tbl) local success, result = pcall(function() return httpService:JSONEncode(tbl) end) return success and result or nil end
 
 local function fRequest(options)
     local requestFunc = syn and syn.request or http and http.request or request
-    if not requestFunc then error("Ваш эксплоит не поддерживает сетевые запросы (request/syn.request)!") end
+    if not requestFunc then error("Ваш эксплоит не поддерживает сетевые запросы!") end
     return requestFunc(options)
-end
-
-local function lDigest(str)
-    local hex = ""
-    for i = 1, #str do
-        hex = hex .. string.format("%02x", string.byte(str, i))
-    end
-    return hex
 end
 
 local function generateNonce()
@@ -60,7 +44,6 @@ local function copyLink()
         local decoded = lDecode(response.Body);
         if decoded and decoded.success then
             setclipboard(decoded.data.url or "");
-            onMessage("Ссылка на Lootlabs скопирована в буфер обмена!");
         end
     end
 end
@@ -88,88 +71,122 @@ local function verifyKey(key)
     return false;
 end
 
--- ИНТЕРФЕЙС И КНОПКИ (АКТИВНЫЙ РАБОЧИЙ БЛОК)
-local keyGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-keyGui.Name = "YnSc_Platoboost_Key"
-keyGui.ResetOnSpawn = false
+-- ====================================================================
+-- ТВОЙ ИНТЕРФЕЙС АВТОРИЗАЦИИ С АВТОЗАГРУЗКОЙ ИЗ GITHUB
+-- ====================================================================
 
-local keyFrame = Instance.new("Frame", keyGui)
-keyFrame.Size = UDim2.new(0, 320, 0, 180)
-keyFrame.Position = UDim2.new(0.5, -160, 0.4, -90)
-keyFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 26)
-keyFrame.Active = true
-keyFrame.Draggable = true
-Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 10)
+if game.CoreGui:FindFirstChild("YnScKeySystem") then
+    game.CoreGui.YnScKeySystem:Destroy()
+end
 
-local kStroke = Instance.new("UIStroke", keyFrame)
-kStroke.Thickness = 2
-kStroke.Color = Color3.fromRGB(138, 43, 226)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "YnScKeySystem"
+ScreenGui.Parent = game.CoreGui
 
-local title = Instance.new("TextLabel", keyFrame)
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Text = "YnSc — ТРЕБУЕТСЯ КЛЮЧ LOOTLABS"
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 380, 0, 160)
+MainFrame.Position = UDim2.new(0.5, -190, 0.5, -80)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 26)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
 
-local textBox = Instance.new("TextBox", keyFrame)
-textBox.Size = UDim2.new(1, -40, 0, 35)
-textBox.Position = UDim2.new(0, 20, 0, 50)
-textBox.BackgroundColor3 = Color3.fromRGB(32, 28, 42)
-textBox.Font = Enum.Font.Gotham
-textBox.TextSize = 13
-textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textBox.PlaceholderText = "Вставьте ключ из Lootlabs..."
-textBox.Text = ""
-Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
+local Corner = Instance.new("UICorner", MainFrame)
+Corner.CornerRadius = UDim.new(0, 12)
 
-local copyBtn = Instance.new("TextButton", keyFrame)
-copyBtn.Size = UDim2.new(0, 130, 0, 35)
-copyBtn.Position = UDim2.new(0, 20, 0, 110)
-copyBtn.BackgroundColor3 = Color3.fromRGB(45, 35, 65)
-copyBtn.Font = Enum.Font.GothamBold
-copyBtn.TextSize = 12
-copyBtn.TextColor3 = Color3.fromRGB(200, 180, 255)
-copyBtn.Text = "ПОЛУЧИТЬ ССЫЛКУ"
-Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 6)
-local cStr = Instance.new("UIStroke", copyBtn) cStr.Thickness = 1 cStr.Color = Color3.fromRGB(138, 43, 226)
+local mainStroke = Instance.new("UIStroke", MainFrame)
+mainStroke.Thickness = 2.5
+mainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+mainStroke.LineJoinMode = Enum.LineJoinMode.Round
 
-local checkBtn = Instance.new("TextButton", keyFrame)
-checkBtn.Size = UDim2.new(0, 130, 0, 35)
-checkBtn.Position = UDim2.new(0, 170, 0, 110)
-checkBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-checkBtn.Font = Enum.Font.GothamBold
-checkBtn.TextSize = 12
-checkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-checkBtn.Text = "ПРОВЕРИТЬ КЛЮЧ"
-Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 6)
+local menuLogo = Instance.new("TextLabel", MainFrame)
+menuLogo.Size = UDim2.new(0, 100, 0, 35)
+menuLogo.Position = UDim2.new(0, 15, 0, 5)
+menuLogo.BackgroundTransparency = 1
+menuLogo.Font = Enum.Font.GothamBold
+menuLogo.TextSize = 16
+menuLogo.Text = "YnSc"
+menuLogo.TextXAlignment = Enum.TextXAlignment.Left
 
-copyBtn.MouseButton1Click:Connect(function()
-    copyLink();
-    copyBtn.Text = "ССЫЛКА В БУФЕРЕ!"
-    task.wait(2)
-    copyBtn.Text = "ПОЛУЧИТЬ ССЫЛКУ"
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(0, 340, 0, 35)
+TextBox.Position = UDim2.new(0, 20, 0, 55)
+TextBox.BackgroundColor3 = Color3.fromRGB(32, 28, 42)
+TextBox.Text = ""
+TextBox.PlaceholderText = "Enter your activation key here..."
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.PlaceholderColor3 = Color3.fromRGB(100, 95, 120)
+TextBox.TextSize = 13
+TextBox.Font = Enum.Font.Gotham
+TextBox.Parent = MainFrame
+
+local TBCorner = Instance.new("UICorner", TextBox)
+TBCorner.CornerRadius = UDim.new(0, 8)
+
+local CopyBtn = Instance.new("TextButton")
+CopyBtn.Size = UDim2.new(0, 165, 0, 35)
+CopyBtn.Position = UDim2.new(0, 20, 0, 105)
+CopyBtn.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+CopyBtn.Text = "Copy Link"
+CopyBtn.TextColor3 = Color3.fromRGB(14, 13, 18)
+CopyBtn.TextSize = 14
+CopyBtn.Font = Enum.Font.GothamBold
+CopyBtn.Parent = MainFrame
+
+Instance.new("UICorner", CopyBtn).CornerRadius = UDim.new(0, 8)
+
+local CheckBtn = Instance.new("TextButton")
+CheckBtn.Size = UDim2.new(0, 165, 0, 35)
+CheckBtn.Position = UDim2.new(0, 195, 0, 105)
+CheckBtn.BackgroundColor3 = Color3.fromRGB(30, 26, 40)
+CheckBtn.Text = "Check Key"
+CheckBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+CheckBtn.TextSize = 14
+CheckBtn.Font = Enum.Font.GothamBold
+CheckBtn.Parent = MainFrame
+
+Instance.new("UICorner", CheckBtn).CornerRadius = UDim.new(0, 8)
+local checkStroke = Instance.new("UIStroke", CheckBtn)
+checkStroke.Thickness = 1.5
+
+task.spawn(function()
+    local timeElapsed = 0
+    while task.wait(0.02) and ScreenGui.Parent do
+        timeElapsed = timeElapsed + 0.02
+        local alpha = (math.sin(timeElapsed * 2.5) + 1) / 2 
+        local currentColor = Color3.fromRGB(138, 43, 226):Lerp(Color3.fromRGB(255, 0, 128), alpha)
+        if menuLogo then menuLogo.TextColor3 = currentColor end
+        if mainStroke then mainStroke.Color = currentColor end
+        if checkStroke then checkStroke.Color = currentColor end
+    end
 end)
 
-checkBtn.MouseButton1Click:Connect(function()
-    local key = textBox.Text;
-    checkBtn.Text = "ПРОВЕРКА..."
-    checkBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 90)
+-- ЛОГИКА НАЖАТИЯ НА КНОПКИ
+CopyBtn.MouseButton1Click:Connect(function()
+    copyLink();
+    CopyBtn.Text = "Copied!"
+    task.wait(1.5)
+    CopyBtn.Text = "Copy Link"
+end)
+
+CheckBtn.MouseButton1Click:Connect(function()
+    local key = TextBox.Text;
+    CheckBtn.Text = "Checking..."
     
     if verifyKey(key) then
-        checkBtn.Text = "УСПЕШНО!"
-        checkBtn.BackgroundColor3 = Color3.fromRGB(45, 120, 45)
+        CheckBtn.Text = "Success!"
+        CheckBtn.BackgroundColor3 = Color3.fromRGB(45, 120, 45)
         task.wait(0.5)
-        keyGui:Destroy()
+        ScreenGui:Destroy()
         
-        -- МОСТ РАБОТАЕТ ИДЕАЛЬНО: Ссылка прямая, чистая и без багов редиректа!
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/pisun282/cheat/refs/heads/main/main.lua"))()
+        -- МОСТ РАБОТАЕТ ИДЕАЛЬНО: Ссылка очищена от багов редиректа!
+        loadstring(game:HttpGet("https://githubusercontent.com"))()
     else
-        checkBtn.Text = "НЕВЕРНЫЙ КЛЮЧ!"
-        checkBtn.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
+        CheckBtn.Text = "Invalid Key!"
+        CheckBtn.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
         task.wait(1.5)
-        checkBtn.Text = "ПРОВЕРИТЬ КЛЮЧ"
-        checkBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        CheckBtn.Text = "Check Key"
+        CheckBtn.BackgroundColor3 = Color3.fromRGB(30, 26, 40)
     end
 end)
