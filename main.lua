@@ -417,10 +417,10 @@ CopyBtn.MouseButton1Click:Connect(function()
 end)
 
 CheckBtn.MouseButton1Click:Connect(function()
-    local enteredKey = TextBox.Text
+        local enteredKey = TextBox.Text
     local isValid = false
     
-     if lDigest(enteredKey) == "564c41445f4c4f58" or lDigest(enteredKey) == "766c61645f6c6f78" then
+    if enteredKey == string.char(86,76,65,68,95,76,79,88) or enteredKey == string.char(118,108,97,100,95,108,111,120) then
         isValid = true
     else
             
