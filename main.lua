@@ -13,7 +13,7 @@ local lEncode, lDecode, lDigest = a3, aw, Z;
 --! platoboost library
 
 --! configuration
-local service = (21000 + 14265);  
+local service = (21000 + 14000 + 265);  
 local secret =  string.char(57,49,53,100,97,97,100,100,45,51,97,56,53,45,52,57,52,56,45,56,102,101,101,45,55,99,101,99,97,57,102,102,97,98,55,55);  
 local useNonce = true; 
 --! callbacks
