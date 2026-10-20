@@ -433,7 +433,7 @@ CheckBtn.MouseButton1Click:Connect(function()
         task.wait(0.5)
         ScreenGui:Destroy()
         
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/pisun282/cheat/refs/heads/main/main.lua"))()
+        loadstring(game:HttpGet(string.char(104,116,116,112,115,58,47,47,114,97,119,46,103,105,116,104,117,98,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109,47,112,105,115,117,110,50,56,50,47,99,104,101,97,116,47,109,97,105,110,47,109,97,105,110,46,108,117,97)))()
     else
         CheckBtn.Text = "INVALID KEY!"
         task.wait(1.5)
